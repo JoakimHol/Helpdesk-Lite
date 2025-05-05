@@ -3,7 +3,7 @@ import {Geist} from 'next/font/google';
 import {Toaster} from '@/components/ui/toaster';
 import {AppProviders} from '@/components/providers';
 import './globals.css';
-import Balancer from 'react-wrap-balancer';
+import { Provider as BalancerProvider } from 'react-wrap-balancer';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -24,10 +24,10 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} antialiased`}>
         <AppProviders>
-          <Balancer.Provider>
+          <BalancerProvider>
             {children}
             <Toaster />
-          </Balancer.Provider>
+          </BalancerProvider>
         </AppProviders>
       </body>
     </html>
