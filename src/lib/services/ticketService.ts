@@ -1,7 +1,6 @@
-
 'use server';
 import type { Ticket, TicketFormData } from '@/types/ticket';
-import { db } from '@/lib/firebase';
+import { db } from '@/lib/firebase'; // Updated import path
 import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, Timestamp } from 'firebase/firestore';
 // import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage'; // Uncomment if file uploads are needed
 
