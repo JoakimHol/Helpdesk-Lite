@@ -1,0 +1,252 @@
+'use client'; // Keep as client component for potential future client-side interactions like sorting/filtering
+
+import { useEffect, useState } from 'react';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import {
+  SidebarProvider,
+  Sidebar,
+  SidebarHeader,
+  SidebarTrigger,
+  SidebarContent,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarInset,
+  SidebarFooter,
+} from '@/components/ui/sidebar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  FileText,
+  LifeBuoy,
+  LogOut,
+  Settings,
+  Ticket as TicketIcon,
+  Users,
+  LayoutDashboard,
+} from 'lucide-react';
+import Link from 'next/link';
+import { getTickets } from '@/services/ticketService';
+import type { Ticket } from '@/types/ticket';
+import { format } from 'date-fns';
+import Balancer from 'react-wrap-balancer';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+
+export default function TicketsPage() {
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchTickets() {
+      try {
+        setLoading(true);
+        setError(null);
+        const fetchedTickets = await getTickets();
+        setTickets(fetchedTickets);
+      } catch (e) {
+        console.error('Failed to fetch tickets:', e);
+        setError('Failed to load tickets. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchTickets();
+  }, []);
+
+  return (
+    <SidebarProvider>
+      <Sidebar>
+        <SidebarHeader className="items-center justify-between gap-0">
+          <div className="flex items-center gap-2">
+            <LifeBuoy className="size-6 text-primary" />
+            <h1 className="text-lg font-semibold group-data-[collapsible=icon]:hidden">
+              HelpDesk Lite
+            </h1>
+          </div>
+          <SidebarTrigger className="hidden group-data-[collapsible=icon]:block group-data-[variant=floating]:hidden" />
+        </SidebarHeader>
+        <SidebarContent className="p-2">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="/" legacyBehavior passHref>
+                  <a>
+                    <LayoutDashboard />
+                    <span>Dashboard</span>
+                  </a>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive>
+                <Link href="/tickets" legacyBehavior passHref>
+                  <a>
+                    <TicketIcon />
+                    <span>Tickets</span>
+                  </a>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="/users" legacyBehavior passHref>
+                  <a>
+                    <Users />
+                    <span>Users</span>
+                  </a>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="/submit-ticket" legacyBehavior passHref>
+                  <a>
+                    <FileText />
+                    <span>Submit Ticket</span>
+                  </a>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarContent>
+        <SidebarFooter className="p-2">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="/settings" legacyBehavior passHref>
+                  <a>
+                    <Settings />
+                    <span>Settings</span>
+                  </a>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="/login" legacyBehavior passHref>
+                  <a>
+                    <LogOut />
+                    <span>Logout</span>
+                  </a>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+          <div className="mt-4 flex items-center gap-3 rounded-lg bg-secondary p-3 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-2">
+            <Avatar className="size-8">
+              <AvatarImage
+                src="https://picsum.photos/40/40"
+                alt="User Avatar"
+                data-ai-hint="user avatar"
+              />
+              <AvatarFallback>U</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col group-data-[collapsible=icon]:hidden">
+              <span className="text-sm font-medium">Current User</span>
+              <span className="text-xs text-muted-foreground">
+                user@example.com
+              </span>
+            </div>
+          </div>
+        </SidebarFooter>
+      </Sidebar>
+      <SidebarInset className="flex flex-col">
+        <header className="flex h-14 items-center justify-between border-b bg-background px-4 lg:px-6">
+          <div className="flex items-center gap-2">
+            <SidebarTrigger className="md:hidden" />
+            <h2 className="text-xl font-semibold">All Tickets</h2>
+          </div>
+          <Button asChild size="sm">
+            <Link href="/submit-ticket" legacyBehavior passHref><a>Create New Ticket</a></Link>
+          </Button>
+        </header>
+        <main className="flex-1 overflow-auto p-4 lg:p-6">
+          {loading && (
+            <div className="space-y-2">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+          )}
+          {error && (
+            <div className="flex flex-col items-center justify-center rounded-md border border-destructive/50 bg-destructive/10 p-6 text-center text-destructive">
+              <TicketIcon className="mb-2 size-10" />
+              <h3 className="text-lg font-semibold">Error Loading Tickets</h3>
+              <p className="text-sm">{error}</p>
+              <Button variant="outline" size="sm" className="mt-4" onClick={() => window.location.reload()}>
+                Retry
+              </Button>
+            </div>
+          )}
+          {!loading && !error && tickets.length === 0 && (
+            <div className="flex flex-col items-center justify-center rounded-md border border-dashed p-10 text-center">
+              <TicketIcon className="mb-4 size-16 text-muted-foreground" />
+              <h3 className="text-xl font-semibold">No Tickets Found</h3>
+              <Balancer className="mt-1 text-sm text-muted-foreground">
+                There are currently no support tickets. Start by creating one!
+              </Balancer>
+              <Button asChild className="mt-4">
+                <Link href="/submit-ticket" legacyBehavior passHref><a>Create First Ticket</a></Link>
+              </Button>
+            </div>
+          )}
+          {!loading && !error && tickets.length > 0 && (
+            <Card className="shadow-md">
+              <CardContent className="p-0">
+                 <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Subject</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Requester Email</TableHead>
+                      <TableHead className="hidden md:table-cell">Phone</TableHead>
+                      <TableHead className="hidden lg:table-cell">Employee ID</TableHead>
+                      <TableHead>Created At</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {tickets.map((ticket) => (
+                      <TableRow key={ticket.id}>
+                        <TableCell className="font-medium max-w-xs truncate" title={ticket.subject}>
+                          {ticket.subject}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={ticket.status === 'Open' ? 'default' : ticket.status === 'Closed' ? 'secondary' : 'outline'}>
+                            {ticket.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{ticket.email}</TableCell>
+                        <TableCell className="hidden md:table-cell">{ticket.phoneNumber || '-'}</TableCell>
+                        <TableCell className="hidden lg:table-cell">{ticket.employeeId || '-'}</TableCell>
+                        <TableCell>
+                          {ticket.createdAt?.toDate ? format(ticket.createdAt.toDate(), 'PPpp') : 'N/A'}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="outline" size="sm" disabled>
+                            View Details
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
+  );
+}

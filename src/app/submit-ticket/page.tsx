@@ -28,52 +28,86 @@ import {
   Users,
   Sparkles,
   Upload,
+  LayoutDashboard,
 } from 'lucide-react';
 import Link from 'next/link';
 import {useToast} from '@/hooks/use-toast';
-import {suggestResponse} from '@/ai/flows/suggest-response'; // Assuming this is correctly set up
+import {suggestResponse} from '@/ai/flows/suggest-response';
+import {addTicket} from '@/services/ticketService';
+import type { TicketFormData } from '@/types/ticket';
 import Balancer from 'react-wrap-balancer';
+import { useRouter } from 'next/navigation';
+
 
 export default function SubmitTicketPage() {
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
+  const [email, setEmail] = useState('user@example.com'); // Default or fetch logged-in user
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [employeeId, setEmployeeId] = useState('');
   const [attachment, setAttachment] = useState<File | null>(null);
   const [suggestedResponse, setSuggestedResponse] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const {toast} = useToast();
+  const router = useRouter();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setAttachment(e.target.files[0]);
+    } else {
+      setAttachment(null);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!subject || !description) {
+    if (!subject || !description || !email) {
       toast({
         title: 'Error',
-        description: 'Please fill in both subject and description.',
+        description: 'Please fill in subject, description, and email.',
         variant: 'destructive',
       });
       return;
     }
 
-    // Replace with actual ticket submission logic
-    console.log('Submitting ticket:', {subject, description, attachment});
-    toast({
-      title: 'Ticket Submitted',
-      description: 'Your ticket has been successfully submitted.',
-    });
+    setIsSubmitting(true);
+    const ticketData: TicketFormData = {
+      subject,
+      description,
+      email,
+      phoneNumber: phoneNumber || undefined,
+      employeeId: employeeId || undefined,
+      attachment: attachment || undefined,
+    };
 
-    // Reset form
-    setSubject('');
-    setDescription('');
-    setAttachment(null);
-    setSuggestedResponse('');
-    // Clear file input visually (might need a ref depending on implementation)
-    const fileInput = document.getElementById('attachment') as HTMLInputElement;
-    if (fileInput) fileInput.value = '';
+    try {
+      await addTicket(ticketData);
+      toast({
+        title: 'Ticket Submitted',
+        description: 'Your ticket has been successfully submitted.',
+      });
+      // Reset form
+      setSubject('');
+      setDescription('');
+      // setEmail(''); // Keep email if it's from logged-in user
+      setPhoneNumber('');
+      setEmployeeId('');
+      setAttachment(null);
+      setSuggestedResponse('');
+      const fileInput = document.getElementById('attachment') as HTMLInputElement;
+      if (fileInput) fileInput.value = '';
+      router.push('/tickets'); // Navigate to tickets page
+    } catch (error) {
+      console.error('Error submitting ticket:', error);
+      toast({
+        title: 'Submission Failed',
+        description: 'Could not submit your ticket. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleSuggestResponse = async () => {
@@ -88,18 +122,22 @@ export default function SubmitTicketPage() {
     setIsSuggesting(true);
     setSuggestedResponse('');
     try {
-      // Note: Claude AI integration requires specific setup not provided here.
-      // This uses the placeholder `suggestResponse` function.
-      // Adapt this call based on your actual AI integration.
       const result = await suggestResponse({
         ticketContent: description,
-        // priorResponses: "", // Add if needed
       });
       setSuggestedResponse(result.suggestedResponse);
-      toast({
-        title: 'Suggestion Ready',
-        description: 'AI has generated a suggested response.',
-      });
+      if (result.suggestedResponse) {
+         toast({
+          title: 'Suggestion Ready',
+          description: 'AI has generated a suggested response.',
+        });
+      } else {
+        toast({
+          title: 'No Suggestion',
+          description: 'AI could not generate a suggestion for this content.',
+          variant: 'default'
+        });
+      }
     } catch (error) {
       console.error('Error fetching suggestion:', error);
       toast({
@@ -128,25 +166,41 @@ export default function SubmitTicketPage() {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Link href="/">
-                  <Ticket />
-                  <span>Tickets</span>
+                <Link href="/" legacyBehavior passHref>
+                  <a>
+                    <LayoutDashboard />
+                    <span>Dashboard</span>
+                  </a>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Link href="/users">
-                  <Users />
-                  <span>Users</span>
+                <Link href="/tickets" legacyBehavior passHref>
+                  <a>
+                    <Ticket />
+                    <span>Tickets</span>
+                  </a>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="/users" legacyBehavior passHref>
+                  <a>
+                    <Users />
+                    <span>Users</span>
+                  </a>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton asChild isActive>
-                <Link href="/submit-ticket">
-                  <FileText />
-                  <span>Submit Ticket</span>
+                <Link href="/submit-ticket" legacyBehavior passHref>
+                  <a>
+                    <FileText />
+                    <span>Submit Ticket</span>
+                  </a>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -156,18 +210,21 @@ export default function SubmitTicketPage() {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Link href="/settings">
-                  <Settings />
-                  <span>Settings</span>
+                <Link href="/settings" legacyBehavior passHref>
+                  <a>
+                    <Settings />
+                    <span>Settings</span>
+                  </a>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                {/* Replace with actual logout logic */}
-                <Link href="/login">
-                  <LogOut />
-                  <span>Logout</span>
+                <Link href="/login" legacyBehavior passHref>
+                  <a>
+                    <LogOut />
+                    <span>Logout</span>
+                  </a>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -179,7 +236,7 @@ export default function SubmitTicketPage() {
             </Avatar>
             <div className="flex flex-col group-data-[collapsible=icon]:hidden">
               <span className="text-sm font-medium">Current User</span>
-              <span className="text-xs text-muted-foreground">user@example.com</span>
+              <span className="text-xs text-muted-foreground">{email}</span>
             </div>
           </div>
         </SidebarFooter>
@@ -197,14 +254,47 @@ export default function SubmitTicketPage() {
               <CardTitle>Create a New Support Ticket</CardTitle>
               <CardDescription>
                 <Balancer>
-                  Describe your issue below. Please be as detailed as possible.
+                  Describe your issue below. Please be as detailed as possible. Provide contact information for follow-up.
                 </Balancer>
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Your Email <span className="text-destructive">*</span></Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phoneNumber">Phone Number (Optional)</Label>
+                    <Input
+                      id="phoneNumber"
+                      type="tel"
+                      placeholder="e.g., +1234567890"
+                      value={phoneNumber}
+                      onChange={e => setPhoneNumber(e.target.value)}
+                    />
+                  </div>
+                </div>
+                 <div className="space-y-2">
+                  <Label htmlFor="employeeId">Employee ID (Optional)</Label>
+                  <Input
+                    id="employeeId"
+                    type="text"
+                    placeholder="e.g., EMP12345"
+                    value={employeeId}
+                    onChange={e => setEmployeeId(e.target.value)}
+                  />
+                </div>
                 <div className="space-y-2">
-                  <Label htmlFor="subject">Subject</Label>
+                  <Label htmlFor="subject">Subject <span className="text-destructive">*</span></Label>
                   <Input
                     id="subject"
                     type="text"
@@ -215,7 +305,7 @@ export default function SubmitTicketPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
+                  <Label htmlFor="description">Description <span className="text-destructive">*</span></Label>
                   <Textarea
                     id="description"
                     placeholder="Provide details about the problem you're facing..."
@@ -233,8 +323,9 @@ export default function SubmitTicketPage() {
                       type="file"
                       onChange={handleFileChange}
                       className="flex-1"
+                      aria-label="Upload attachment"
                     />
-                    <Button type="button" variant="outline" size="icon" onClick={() => document.getElementById('attachment')?.click()}>
+                    <Button type="button" variant="outline" size="icon" aria-label="Choose file" onClick={() => document.getElementById('attachment')?.click()}>
                       <Upload className="h-4 w-4" />
                     </Button>
                    </div>
@@ -253,7 +344,7 @@ export default function SubmitTicketPage() {
                     className="w-full md:w-auto"
                   >
                     <Sparkles className="mr-2 h-4 w-4" />
-                    {isSuggesting ? 'Generating...' : 'Suggest Response (AI)'}
+                    {isSuggesting ? 'Generating Suggestion...' : 'Suggest Response (AI)'}
                   </Button>
                   {suggestedResponse && (
                     <Card className="mt-2 bg-secondary">
@@ -267,13 +358,12 @@ export default function SubmitTicketPage() {
                   )}
                 </div>
                  <CardFooter className="p-0 pt-4">
-                  <Button type="submit" className="w-full">
-                    Submit Ticket
+                  <Button type="submit" className="w-full" disabled={isSubmitting}>
+                    {isSubmitting ? 'Submitting...' : 'Submit Ticket'}
                   </Button>
                 </CardFooter>
               </form>
             </CardContent>
-
           </Card>
         </main>
       </SidebarInset>

@@ -1,3 +1,4 @@
+'use client';
 
 import {
   SidebarProvider,
@@ -11,22 +12,22 @@ import {
   SidebarInset,
   SidebarFooter,
 } from '@/components/ui/sidebar';
-import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar';
-import {Button} from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+// import { Button } from '@/components/ui/button'; // Button not used directly on this page for Link wrapping
 import {
   FileText,
   LifeBuoy,
   LogOut,
   Settings,
   Ticket,
-  Users,
+  Users as UsersIcon,
   LayoutDashboard,
 } from 'lucide-react';
 import Link from 'next/link';
 import Balancer from 'react-wrap-balancer';
 import Image from 'next/image';
 
-export default function Home() {
+export default function UsersPage() {
   return (
     <SidebarProvider>
       <Sidebar>
@@ -42,7 +43,7 @@ export default function Home() {
         <SidebarContent className="p-2">
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive>
+              <SidebarMenuButton asChild>
                 <Link href="/" legacyBehavior passHref>
                   <a>
                     <LayoutDashboard />
@@ -62,10 +63,10 @@ export default function Home() {
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild>
+              <SidebarMenuButton asChild isActive>
                 <Link href="/users" legacyBehavior passHref>
                   <a>
-                    <Users />
+                    <UsersIcon />
                     <span>Users</span>
                   </a>
                 </Link>
@@ -128,36 +129,28 @@ export default function Home() {
         <header className="flex h-14 items-center justify-between border-b bg-background px-4 lg:px-6">
           <div className="flex items-center gap-2">
             <SidebarTrigger className="md:hidden" />
-            <h2 className="text-xl font-semibold">Dashboard</h2>
+            <h2 className="text-xl font-semibold">User Management</h2>
           </div>
-          {/* Add User Menu or other header elements here if needed */}
+          {/* Add User action buttons here if needed, e.g., "Add User" */}
         </header>
         <main className="flex-1 overflow-auto p-4 lg:p-6">
           <div className="flex flex-col items-center justify-center space-y-6 text-center">
+            <UsersIcon className="size-24 text-muted-foreground" />
+            <h3 className="text-2xl font-semibold">
+              User Management
+            </h3>
+            <Balancer className="max-w-md text-muted-foreground">
+              This section is for managing users. Functionality to list, add, edit, and remove users will be implemented here.
+            </Balancer>
             <Image
-              src="https://picsum.photos/400/300"
-              alt="Helpdesk illustration"
-              data-ai-hint="helpdesk team illustration"
-              width={400}
-              height={300}
+              src="https://picsum.photos/300/200"
+              alt="Users illustration"
+              data-ai-hint="team collaboration illustration"
+              width={300}
+              height={200}
               className="rounded-lg shadow-md"
             />
-            <h3 className="text-2xl font-semibold">
-              Welcome to HelpDesk Lite!
-            </h3>
-            <Balancer className="max-w-lg text-muted-foreground">
-              This is your central hub for managing support. You can view all
-              support tickets, manage users, or submit a new ticket using the
-              sidebar navigation.
-            </Balancer>
-            <div className="flex gap-4">
-              <Button asChild>
-                <Link href="/tickets" legacyBehavior passHref><a>View All Tickets</a></Link>
-              </Button>
-              <Button asChild variant="secondary">
-                <Link href="/submit-ticket" legacyBehavior passHref><a>Create New Ticket</a></Link>
-              </Button>
-            </div>
+            {/* Placeholder for user list or management tools */}
           </div>
         </main>
       </SidebarInset>
