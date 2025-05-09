@@ -1,15 +1,14 @@
-import type { Timestamp } from 'firebase/firestore';
 
 export interface Ticket {
-  id?: string; // Firestore document ID
+  id?: string; // Supabase will generate this (usually UUID)
   subject: string;
   description: string;
-  attachmentURL?: string; // URL to the uploaded file in Firebase Storage
+  attachmentURL?: string; // URL to the uploaded file (if using Supabase Storage)
   email: string; // User's email
   phoneNumber?: string;
   employeeId?: string;
   status: 'Open' | 'In Progress' | 'Closed' | string; // Status of the ticket
-  createdAt: Timestamp; // Timestamp of when the ticket was created
+  created_at: string; // Timestamp string (ISO format from Supabase)
 }
 
 export interface TicketFormData {

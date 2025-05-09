@@ -173,7 +173,23 @@ export default function TicketsPage() {
               <TicketIcon className="mb-2 size-10" />
               <h3 className="text-lg font-semibold">Error Loading Tickets</h3>
               <p className="text-sm">{error}</p>
-              <Button variant="outline" size="sm" className="mt-4" onClick={() => window.location.reload()}>
+              <Button variant="outline" size="sm" className="mt-4" onClick={() => {
+                setLoading(true);
+                setError(null);
+                // Re-fetch tickets
+                 async function fetchTickets() {
+                  try {
+                    const fetchedTickets = await getTickets();
+                    setTickets(fetchedTickets);
+                  } catch (e) {
+                    console.error('Failed to refetch tickets:', e);
+                    setError('Failed to load tickets. Please try again later.');
+                  } finally {
+                    setLoading(false);
+                  }
+                }
+                fetchTickets();
+              }}>
                 Retry
               </Button>
             </div>
@@ -220,7 +236,7 @@ export default function TicketsPage() {
                         <TableCell className="hidden md:table-cell">{ticket.phoneNumber || '-'}</TableCell>
                         <TableCell className="hidden lg:table-cell">{ticket.employeeId || '-'}</TableCell>
                         <TableCell>
-                          {ticket.createdAt?.toDate ? format(ticket.createdAt.toDate(), 'PPpp') : 'N/A'}
+                          {ticket.created_at ? format(new Date(ticket.created_at), 'PPpp') : 'N/A'}
                         </TableCell>
                         <TableCell className="text-right">
                           <Button variant="outline" size="sm" disabled>

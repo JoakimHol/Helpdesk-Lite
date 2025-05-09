@@ -33,7 +33,7 @@ import {
 import Link from 'next/link';
 import {useToast} from '@/hooks/use-toast';
 import {suggestResponse} from '@/ai/flows/suggest-response';
-import {addTicket} from '@/lib/services/ticketService';
+import {addTicket} from '@/lib/services/ticketService'; // Updated import path
 import type { TicketFormData } from '@/types/ticket';
 import Balancer from 'react-wrap-balancer';
 import { useRouter } from 'next/navigation';
@@ -78,7 +78,7 @@ export default function SubmitTicketPage() {
       email,
       phoneNumber: phoneNumber || undefined,
       employeeId: employeeId || undefined,
-      attachment: attachment || undefined,
+      attachment: attachment || undefined, // This will be handled by ticketService if attachment upload is implemented
     };
 
     try {
@@ -100,9 +100,13 @@ export default function SubmitTicketPage() {
       router.push('/tickets'); // Navigate to tickets page
     } catch (error) {
       console.error('Error submitting ticket:', error);
+      let errorMessage = 'Could not submit your ticket. Please try again.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
       toast({
         title: 'Submission Failed',
-        description: 'Could not submit your ticket. Please try again.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
