@@ -1,3 +1,4 @@
+
 'use client'; // Keep as client component for potential future client-side interactions like sorting/filtering
 
 import { useEffect, useState } from 'react';
@@ -33,7 +34,7 @@ import {
   LayoutDashboard,
 } from 'lucide-react';
 import Link from 'next/link';
-import { getTickets } from '@/services/ticketService';
+import { getTickets } from '@/lib/services/ticketService';
 import type { Ticket } from '@/types/ticket';
 import { format } from 'date-fns';
 import Balancer from 'react-wrap-balancer';
@@ -79,41 +80,33 @@ export default function TicketsPage() {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Link href="/" legacyBehavior passHref>
-                  <a>
+                <Link href="/">
                     <LayoutDashboard />
                     <span>Dashboard</span>
-                  </a>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton asChild isActive>
-                <Link href="/tickets" legacyBehavior passHref>
-                  <a>
+                <Link href="/tickets">
                     <TicketIcon />
                     <span>Tickets</span>
-                  </a>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Link href="/users" legacyBehavior passHref>
-                  <a>
+                <Link href="/users">
                     <Users />
                     <span>Users</span>
-                  </a>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Link href="/submit-ticket" legacyBehavior passHref>
-                  <a>
+                <Link href="/submit-ticket">
                     <FileText />
                     <span>Submit Ticket</span>
-                  </a>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -123,21 +116,17 @@ export default function TicketsPage() {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Link href="/settings" legacyBehavior passHref>
-                  <a>
+                <Link href="/settings">
                     <Settings />
                     <span>Settings</span>
-                  </a>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Link href="/login" legacyBehavior passHref>
-                  <a>
+                <Link href="/login">
                     <LogOut />
                     <span>Logout</span>
-                  </a>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -167,7 +156,7 @@ export default function TicketsPage() {
             <h2 className="text-xl font-semibold">All Tickets</h2>
           </div>
           <Button asChild size="sm">
-            <Link href="/submit-ticket" legacyBehavior passHref><a>Create New Ticket</a></Link>
+            <Link href="/submit-ticket">Create New Ticket</Link>
           </Button>
         </header>
         <main className="flex-1 overflow-auto p-4 lg:p-6">
@@ -197,7 +186,7 @@ export default function TicketsPage() {
                 There are currently no support tickets. Start by creating one!
               </Balancer>
               <Button asChild className="mt-4">
-                <Link href="/submit-ticket" legacyBehavior passHref><a>Create First Ticket</a></Link>
+                <Link href="/submit-ticket">Create First Ticket</Link>
               </Button>
             </div>
           )}

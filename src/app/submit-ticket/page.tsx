@@ -33,7 +33,7 @@ import {
 import Link from 'next/link';
 import {useToast} from '@/hooks/use-toast';
 import {suggestResponse} from '@/ai/flows/suggest-response';
-import {addTicket} from '@/services/ticketService';
+import {addTicket} from '@/lib/services/ticketService';
 import type { TicketFormData } from '@/types/ticket';
 import Balancer from 'react-wrap-balancer';
 import { useRouter } from 'next/navigation';
@@ -166,41 +166,33 @@ export default function SubmitTicketPage() {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Link href="/" legacyBehavior passHref>
-                  <a>
+                <Link href="/">
                     <LayoutDashboard />
                     <span>Dashboard</span>
-                  </a>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Link href="/tickets" legacyBehavior passHref>
-                  <a>
+                <Link href="/tickets">
                     <Ticket />
                     <span>Tickets</span>
-                  </a>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Link href="/users" legacyBehavior passHref>
-                  <a>
+                <Link href="/users">
                     <Users />
                     <span>Users</span>
-                  </a>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton asChild isActive>
-                <Link href="/submit-ticket" legacyBehavior passHref>
-                  <a>
+                <Link href="/submit-ticket">
                     <FileText />
                     <span>Submit Ticket</span>
-                  </a>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -210,21 +202,17 @@ export default function SubmitTicketPage() {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Link href="/settings" legacyBehavior passHref>
-                  <a>
+                <Link href="/settings">
                     <Settings />
                     <span>Settings</span>
-                  </a>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Link href="/login" legacyBehavior passHref>
-                  <a>
+                <Link href="/login">
                     <LogOut />
                     <span>Logout</span>
-                  </a>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
