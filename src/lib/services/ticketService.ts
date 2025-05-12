@@ -1,5 +1,5 @@
 'use server';
-import type { Ticket, TicketFormData } from '@/types/ticket';
+import type { Ticket, TicketFormData, TicketStatus } from '@/types/ticket';
 import { supabase } from '@/lib/supabase/client';
 // import { StorageClient } from '@supabase/storage-js'; // Import if using Supabase storage for attachments
 
@@ -42,6 +42,7 @@ export async function addTicket(ticketData: TicketFormData): Promise<string> {
       // attachment_url: attachmentURL || null, // Ensure snake_case
       status: 'Open', // Default status
       // created_at is usually handled by Supabase (default now())
+      // updated_at will be set on update
     };
 
     const { data, error } = await supabase
@@ -90,11 +91,12 @@ export async function getTickets(): Promise<Ticket[]> {
           subject: item.subject,
           description: item.description,
           email: item.email,
-          phoneNumber: item.phone_number, // Map from snake_case
-          employeeId: item.employee_id,   // Map from snake_case
+          phoneNumber: item.phone_number,
+          employeeId: item.employee_id,
           status: item.status,
-          created_at: item.created_at,       // Ensure this is a string (ISO format)
-          // attachmentURL: item.attachment_url, // Map from snake_case
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          // attachmentURL: item.attachment_url,
         }))
       : [];
       
@@ -106,5 +108,65 @@ export async function getTickets(): Promise<Ticket[]> {
       throw new Error(`Failed to fetch tickets: ${e.message}`);
     }
     throw new Error('Failed to fetch tickets due to an unknown error.');
+  }
+}
+
+export async function getTicketById(id: string): Promise<Ticket | null> {
+  try {
+    const { data, error } = await supabase
+      .from('tickets')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') { // PostgREST error code for "Query returned no rows"
+        return null;
+      }
+      console.error(`Error fetching ticket ${id} from Supabase: `, error);
+      throw new Error(`Failed to fetch ticket from Supabase: ${error.message}`);
+    }
+
+    if (!data) return null;
+
+    return {
+      id: data.id,
+      subject: data.subject,
+      description: data.description,
+      email: data.email,
+      phoneNumber: data.phone_number,
+      employeeId: data.employee_id,
+      status: data.status,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+      // attachmentURL: data.attachment_url,
+    };
+  } catch (e) {
+    console.error(`Error in getTicketById function for ID ${id}: `, e);
+    if (e instanceof Error) {
+      throw new Error(`Failed to fetch ticket: ${e.message}`);
+    }
+    throw new Error('Failed to fetch ticket due to an unknown error.');
+  }
+}
+
+export async function updateTicketStatus(ticketId: string, status: TicketStatus): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('tickets')
+      .update({ status: status, updated_at: new Date().toISOString() })
+      .eq('id', ticketId);
+
+    if (error) {
+      console.error(`Error updating ticket ${ticketId} status in Supabase: `, error);
+      throw new Error(`Failed to update ticket status: ${error.message}`);
+    }
+    console.log(`Ticket ${ticketId} status updated to ${status}`);
+  } catch (e) {
+    console.error(`Error in updateTicketStatus function for ID ${ticketId}: `, e);
+    if (e instanceof Error) {
+      throw new Error(`Failed to update ticket status: ${e.message}`);
+    }
+    throw new Error('Failed to update ticket status due to an unknown error.');
   }
 }

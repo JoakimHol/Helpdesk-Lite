@@ -32,6 +32,7 @@ import {
   Ticket as TicketIcon,
   Users,
   LayoutDashboard,
+  Eye,
 } from 'lucide-react';
 import Link from 'next/link';
 import { getTickets } from '@/lib/services/ticketService';
@@ -239,8 +240,10 @@ export default function TicketsPage() {
                           {ticket.created_at ? format(new Date(ticket.created_at), 'PPpp') : 'N/A'}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button variant="outline" size="sm" disabled>
-                            View Details
+                          <Button variant="outline" size="sm" asChild>
+                            <Link href={`/tickets/${ticket.id}`}>
+                              <Eye className="mr-2 h-4 w-4" /> View
+                            </Link>
                           </Button>
                         </TableCell>
                       </TableRow>
