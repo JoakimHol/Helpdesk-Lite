@@ -1,11 +1,11 @@
 
 'use client';
 
-import type { PropsWithChildren } from 'react';
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import type { Session, User } from '@supabase/supabase-js';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import type { Session, User, AuthError, SignInWithPasswordCredentials, SignUpWithPasswordCredentials, SignUpWithPasswordCredentialsExtended } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
 import type { UserProfile, UserRole } from '@/types/user';
+import { getUserProfile } from '@/lib/services/userService';
 
 interface AuthContextType {
   session: Session | null;
@@ -15,14 +15,14 @@ interface AuthContextType {
   loading: boolean;
   isAdmin: boolean;
   isSupport: boolean;
-  signInWithPassword: typeof supabase.auth.signInWithPassword;
-  signOut: typeof supabase.auth.signOut;
-  signUp: typeof supabase.auth.signUp;
+  signInWithPassword: (credentials: SignInWithPasswordCredentials) => Promise<{ data: { user: User | null; session: Session | null; }; error: AuthError | null; }>;
+  signOut: () => Promise<{ error: AuthError | null }>;
+  signUp: (credentials: SignUpWithPasswordCredentialsExtended) => Promise<{ data: { user: User | null; session: Session | null; }; error: AuthError | null; }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: PropsWithChildren) {
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -30,64 +30,55 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const getInitialSession = async () => {
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      if (currentSession?.user) {
-        await fetchUserProfile(currentSession.user.id);
-      }
-      setLoading(false);
-    };
-
-    getInitialSession();
-
+    setLoading(true);
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (_event, newSession) => {
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
-        if (newSession?.user) {
-          await fetchUserProfile(newSession.user.id);
+      async (_event, currentSession) => {
+        setSession(currentSession);
+        const currentUser = currentSession?.user ?? null;
+        setUser(currentUser);
+
+        if (currentUser) {
+          try {
+            const userProfile = await getUserProfile(currentUser.id);
+            setProfile(userProfile);
+            setRole(userProfile?.role || 'user'); 
+          } catch (error) {
+            console.error("Error fetching user profile:", error);
+            setProfile(null);
+            setRole('user'); // Fallback role
+          }
         } else {
           setProfile(null);
           setRole(null);
         }
-        if (_event !== 'INITIAL_SESSION') {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     );
+
+    // Initial check for session to avoid flicker/delay
+    const checkInitialSession = async () => {
+        try {
+            const { data: { session: initialSession } } = await supabase.auth.getSession();
+            setSession(initialSession);
+            const initialUser = initialSession?.user ?? null;
+            setUser(initialUser);
+            if (initialUser) {
+                const userProfile = await getUserProfile(initialUser.id);
+                setProfile(userProfile);
+                setRole(userProfile?.role || 'user');
+            }
+        } catch (error) {
+            console.error("Error checking initial session:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+    checkInitialSession();
 
     return () => {
       authListener?.unsubscribe();
     };
   }, []);
-
-  const fetchUserProfile = async (userId: string) => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        console.error('Error fetching user profile:', error);
-        setProfile(null);
-        setRole(null);
-      } else if (data) {
-        setProfile(data as UserProfile);
-        setRole((data as UserProfile).role || 'user');
-      }
-    } catch (e) {
-      console.error('Exception fetching user profile:', e);
-      setProfile(null);
-      setRole(null);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const value = {
     session,
@@ -97,18 +88,18 @@ export function AuthProvider({ children }: PropsWithChildren) {
     loading,
     isAdmin: role === 'admin',
     isSupport: role === 'support' || role === 'admin',
-    signInWithPassword: supabase.auth.signInWithPassword,
+    signInWithPassword: (credentials: SignInWithPasswordCredentials) => supabase.auth.signInWithPassword(credentials),
     signOut: () => supabase.auth.signOut(),
-    signUp: supabase.auth.signUp,
+    signUp: (credentials: SignUpWithPasswordCredentialsExtended) => supabase.auth.signUp(credentials),
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
+};
 
-export function useAuth() {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}
+};
