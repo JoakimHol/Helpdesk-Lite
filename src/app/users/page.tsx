@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -31,12 +30,14 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import type { UserProfile } from '@/types/user';
-import { supabase } from '@/lib/supabase/client'; // Direct Supabase client for fetching users
+import { supabase } from '@/lib/supabase/client'; 
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import Balancer from 'react-wrap-balancer';
+import { useToast } from '@/hooks/use-toast';
+
 
 export default function UsersPage() {
   const { user, profile, role, loading: authLoading, signOut: doSignOut, isAdmin } = useAuth();
@@ -44,20 +45,20 @@ export default function UsersPage() {
   const [userList, setUserList] = useState<UserProfile[]>([]);
   const [listLoading, setListLoading] = useState(true);
   const [listError, setListError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!authLoading && !user) {
       router.push('/login');
     }
     if (!authLoading && user && !isAdmin) {
-      // If user is not admin, redirect them away from this page
       toast({ title: "Access Denied", description: "You don't have permission to view this page.", variant: "destructive" });
       router.push('/');
     }
     if (isAdmin) {
       fetchUsers();
     }
-  }, [user, authLoading, isAdmin, router]);
+  }, [user, authLoading, isAdmin, router, toast]);
 
   const fetchUsers = async () => {
     setListLoading(true);
@@ -70,6 +71,7 @@ export default function UsersPage() {
       console.error("Error fetching users:", err);
       const fetchErr = err as Error;
       setListError(fetchErr.message || "Failed to load users.");
+      toast({ title: "Error", description: "Failed to load user list.", variant: "destructive"});
     } finally {
       setListLoading(false);
     }
@@ -85,6 +87,7 @@ export default function UsersPage() {
   }
 
   if (!isAdmin) {
+     // Toast already shown in useEffect
      return <div className="flex h-screen items-center justify-center"><p>Access Denied. Redirecting...</p></div>;
   }
 
@@ -254,9 +257,3 @@ export default function UsersPage() {
     </SidebarProvider>
   );
 }
-
-// Placeholder for toast until it's properly integrated or if not used on this page
-const toast = ({ title, description, variant }: { title: string, description: string, variant?: string }) => {
-  console.log(`Toast (${variant || 'default'}): ${title} - ${description}`);
-};
-

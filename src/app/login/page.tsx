@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -7,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { LifeBuoy } from 'lucide-react';
 import Balancer from 'react-wrap-balancer';
 import { useAuth } from '@/contexts/AuthContext';
@@ -39,7 +39,7 @@ export default function LoginPage() {
         toast({ title: 'Login Failed', description: error.message, variant: 'destructive' });
       } else {
         toast({ title: 'Login Successful', description: 'Redirecting to dashboard...' });
-        router.push('/'); // AuthProvider will also redirect, but this is a fallback
+        router.push('/'); 
       }
     } catch (err) {
         const loginError = err as Error;
@@ -89,6 +89,7 @@ export default function LoginPage() {
                 id="password"
                 type="password"
                 value={password}
+                placeholder="••••••••"
                 onChange={e => setPassword(e.target.value)}
                 required
                 disabled={isLoading}
@@ -99,9 +100,14 @@ export default function LoginPage() {
             </Button>
           </form>
         </CardContent>
-        <CardFooter className="text-center text-sm text-muted-foreground">
-          {/* Add link to registration or forgot password if needed */}
-          {/* For now, no registration link. Users are expected to be created by an admin or pre-seeded. */}
+        <CardFooter className="flex flex-col items-center space-y-2 text-sm">
+          <p className="text-muted-foreground">
+            Don't have an account?{' '}
+            <Link href="/signup" className="font-medium text-primary hover:underline">
+              Sign Up
+            </Link>
+          </p>
+          {/* Add link to forgot password if needed */}
         </CardFooter>
       </Card>
     </div>
