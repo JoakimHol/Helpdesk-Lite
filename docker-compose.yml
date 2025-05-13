@@ -6,9 +6,11 @@ services:
       - "9002:9002" # Match the port used in package.json dev script
     environment:
       - NODE_ENV=development
-      # Add any necessary environment variables here, e.g., API keys
-      # GOOGLE_GENAI_API_KEY=your_google_api_key
-      # NEXT_PUBLIC_FIREBASE_CONFIG=your_firebase_config_json_stringified
+      # Supabase and GenAI environment variables will be loaded from the .env file
+      # Example:
+      # - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      # - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      # - GOOGLE_GENAI_API_KEY=${GOOGLE_GENAI_API_KEY}
     volumes:
       - .:/app # Mount the current directory into the container
       - /app/node_modules # Don't mount host node_modules
@@ -22,7 +24,7 @@ services:
   #     - "3400:3400" # Default Genkit API port
   #   environment:
   #     - NODE_ENV=development
-  #     # Ensure necessary AI keys are available
+  #     # Ensure necessary AI keys are available, sourced from .env or host environment
   #     - GOOGLE_GENAI_API_KEY=${GOOGLE_GENAI_API_KEY}
   #   volumes:
   #     - .:/app
