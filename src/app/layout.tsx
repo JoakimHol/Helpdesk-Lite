@@ -1,9 +1,11 @@
+
 import type {Metadata} from 'next';
 import {Geist} from 'next/font/google';
 import {Toaster} from '@/components/ui/toaster';
 import {AppProviders} from '@/components/providers';
 import './globals.css';
 import { Provider as BalancerProvider } from 'react-wrap-balancer';
+import { AuthProvider } from '@/contexts/AuthContext';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -24,10 +26,12 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} antialiased`}>
         <AppProviders>
-          <BalancerProvider>
-            {children}
-            <Toaster />
-          </BalancerProvider>
+          <AuthProvider>
+            <BalancerProvider>
+              {children}
+              <Toaster />
+            </BalancerProvider>
+          </AuthProvider>
         </AppProviders>
       </body>
     </html>

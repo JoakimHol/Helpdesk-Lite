@@ -1,3 +1,4 @@
+
 'use server';
 import type { Ticket, TicketFormData, TicketStatus } from '@/types/ticket';
 import { supabase } from '@/lib/supabase/client';
@@ -12,7 +13,11 @@ import { supabase } from '@/lib/supabase/client';
 // });
 
 
-export async function addTicket(ticketData: TicketFormData): Promise<string> {
+export async function addTicket(
+  ticketData: TicketFormData,
+  userId: string,
+  userEmail: string
+): Promise<string> {
   try {
     // Placeholder for attachment upload to Supabase Storage if needed
     // let attachmentURL: string | undefined = undefined;
@@ -34,22 +39,21 @@ export async function addTicket(ticketData: TicketFormData): Promise<string> {
     // }
 
     const newTicket = {
+      user_id: userId, // Link ticket to the user
       subject: ticketData.subject,
       description: ticketData.description,
-      email: ticketData.email,
-      phone_number: ticketData.phoneNumber || null, // Ensure snake_case for Supabase columns
-      employee_id: ticketData.employeeId || null, // Ensure snake_case
-      // attachment_url: attachmentURL || null, // Ensure snake_case
-      status: 'Open', // Default status
-      // created_at is usually handled by Supabase (default now())
-      // updated_at will be set on update
+      email: userEmail, // Email of the user submitting the ticket
+      phone_number: ticketData.phoneNumber || null,
+      employee_id: ticketData.employeeId || null,
+      // attachment_url: attachmentURL || null,
+      status: 'Open' as TicketStatus, // Default status
     };
 
     const { data, error } = await supabase
-      .from('tickets') // Ensure 'tickets' table exists in Supabase
+      .from('tickets')
       .insert([newTicket])
       .select('id')
-      .single(); // Assuming you want the ID of the inserted row
+      .single(); 
 
     if (error) {
       console.error('Error adding document to Supabase: ', error);
@@ -74,26 +78,27 @@ export async function addTicket(ticketData: TicketFormData): Promise<string> {
 
 export async function getTickets(): Promise<Ticket[]> {
   try {
+    // RLS policies will filter tickets based on the authenticated user's role
     const { data, error } = await supabase
       .from('tickets')
       .select('*')
-      .order('created_at', { ascending: false }); // Ensure 'created_at' column exists
+      .order('created_at', { ascending: false }); 
 
     if (error) {
       console.error('Error fetching tickets from Supabase: ', error);
       throw new Error(`Failed to fetch tickets from Supabase: ${error.message}`);
     }
 
-    // Map Supabase data to Ticket type, handling potential snake_case to camelCase differences
     const ticketList: Ticket[] = data
       ? data.map(item => ({
           id: item.id,
+          user_id: item.user_id,
           subject: item.subject,
           description: item.description,
           email: item.email,
           phoneNumber: item.phone_number,
           employeeId: item.employee_id,
-          status: item.status,
+          status: item.status as TicketStatus,
           created_at: item.created_at,
           updated_at: item.updated_at,
           // attachmentURL: item.attachment_url,
@@ -113,6 +118,7 @@ export async function getTickets(): Promise<Ticket[]> {
 
 export async function getTicketById(id: string): Promise<Ticket | null> {
   try {
+    // RLS policies will ensure only authorized users can fetch specific tickets
     const { data, error } = await supabase
       .from('tickets')
       .select('*')
@@ -120,7 +126,7 @@ export async function getTicketById(id: string): Promise<Ticket | null> {
       .single();
 
     if (error) {
-      if (error.code === 'PGRST116') { // PostgREST error code for "Query returned no rows"
+      if (error.code === 'PGRST116') { 
         return null;
       }
       console.error(`Error fetching ticket ${id} from Supabase: `, error);
@@ -131,12 +137,13 @@ export async function getTicketById(id: string): Promise<Ticket | null> {
 
     return {
       id: data.id,
+      user_id: data.user_id,
       subject: data.subject,
       description: data.description,
       email: data.email,
       phoneNumber: data.phone_number,
       employeeId: data.employee_id,
-      status: data.status,
+      status: data.status as TicketStatus,
       created_at: data.created_at,
       updated_at: data.updated_at,
       // attachmentURL: data.attachment_url,
@@ -152,6 +159,7 @@ export async function getTicketById(id: string): Promise<Ticket | null> {
 
 export async function updateTicketStatus(ticketId: string, status: TicketStatus): Promise<void> {
   try {
+    // RLS policies will ensure only authorized users (support/admin) can update status
     const { error } = await supabase
       .from('tickets')
       .update({ status: status, updated_at: new Date().toISOString() })

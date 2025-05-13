@@ -1,33 +1,61 @@
+
 'use client';
 
-import {useState} from 'react';
-import {Button} from '@/components/ui/button';
-import {Input} from '@/components/ui/input';
-import {Label} from '@/components/ui/label';
-import {Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter} from '@/components/ui/card';
-import {useRouter} from 'next/navigation';
-import {LifeBuoy} from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { useRouter } from 'next/navigation';
+import { LifeBuoy } from 'lucide-react';
 import Balancer from 'react-wrap-balancer';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { signInWithPassword, session, loading: authLoading } = useAuth();
+  const { toast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!authLoading && session) {
+      router.push('/');
+    }
+  }, [session, authLoading, router]);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Basic validation
     if (!email || !password) {
-      setError('Please enter both email and password.');
+      toast({ title: 'Error', description: 'Please enter both email and password.', variant: 'destructive' });
       return;
     }
-    setError('');
-    // Dummy login logic - replace with actual authentication
-    console.log('Logging in with:', email, password);
-    // Redirect to dashboard on successful login
-    router.push('/');
+    setIsLoading(true);
+    try {
+      const { error } = await signInWithPassword({ email, password });
+      if (error) {
+        toast({ title: 'Login Failed', description: error.message, variant: 'destructive' });
+      } else {
+        toast({ title: 'Login Successful', description: 'Redirecting to dashboard...' });
+        router.push('/'); // AuthProvider will also redirect, but this is a fallback
+      }
+    } catch (err) {
+        const loginError = err as Error;
+        toast({ title: 'Login Error', description: loginError.message || 'An unexpected error occurred.', variant: 'destructive' });
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  if (authLoading || (!authLoading && session)) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-secondary p-4">
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-secondary p-4">
@@ -52,6 +80,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
@@ -62,16 +91,17 @@ export default function LoginPage() {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
+                disabled={isLoading}
               />
             </div>
-            {error && <p className="text-sm font-medium text-destructive">{error}</p>}
-            <Button type="submit" className="w-full">
-              Login
+            <Button type="submit" className="w-full" disabled={isLoading || authLoading}>
+              {isLoading ? 'Logging in...' : 'Login'}
             </Button>
           </form>
         </CardContent>
         <CardFooter className="text-center text-sm text-muted-foreground">
           {/* Add link to registration or forgot password if needed */}
+          {/* For now, no registration link. Users are expected to be created by an admin or pre-seeded. */}
         </CardFooter>
       </Card>
     </div>

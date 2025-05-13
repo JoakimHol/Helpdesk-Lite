@@ -1,5 +1,5 @@
 
-'use client'; // Keep as client component for potential future client-side interactions like sorting/filtering
+'use client';
 
 import { useEffect, useState } from 'react';
 import {
@@ -42,28 +42,50 @@ import Balancer from 'react-wrap-balancer';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 
 export default function TicketsPage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user, profile, role, loading: authLoading, signOut: doSignOut } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
-    async function fetchTickets() {
-      try {
-        setLoading(true);
-        setError(null);
-        const fetchedTickets = await getTickets();
-        setTickets(fetchedTickets);
-      } catch (e) {
-        console.error('Failed to fetch tickets:', e);
-        setError('Failed to load tickets. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
+    if (!authLoading && !user) {
+      router.push('/login');
+      return;
     }
-    fetchTickets();
-  }, []);
+    if (user) { // Fetch tickets only if user is loaded
+      fetchUserTickets();
+    }
+  }, [user, authLoading, router]);
+  
+  const fetchUserTickets = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      // getTickets might need to be adjusted based on RLS or if it needs userId
+      const fetchedTickets = await getTickets(); 
+      setTickets(fetchedTickets);
+    } catch (e) {
+      console.error('Failed to fetch tickets:', e);
+      setError('Failed to load tickets. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  const handleLogout = async () => {
+    await doSignOut();
+    router.push('/login');
+  };
+
+  if (authLoading || (!user && !authLoading)) {
+    return <div className="flex h-screen items-center justify-center"><p>Loading...</p></div>;
+  }
 
   return (
     <SidebarProvider>
@@ -95,14 +117,16 @@ export default function TicketsPage() {
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link href="/users">
+            {role === 'admin' && (
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/users">
                     <Users />
                     <span>Users</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
                 <Link href="/submit-ticket">
@@ -124,27 +148,27 @@ export default function TicketsPage() {
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link href="/login">
-                    <LogOut />
-                    <span>Logout</span>
-                </Link>
+              <SidebarMenuButton onClick={handleLogout}>
+                <LogOut />
+                <span>Logout</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
           <div className="mt-4 flex items-center gap-3 rounded-lg bg-secondary p-3 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-2">
             <Avatar className="size-8">
               <AvatarImage
-                src="https://picsum.photos/40/40"
-                alt="User Avatar"
+                src={profile?.full_name ? undefined : "https://picsum.photos/40/40"}
+                alt={profile?.full_name || user?.email?.[0]?.toUpperCase() || 'U'}
                 data-ai-hint="user avatar"
               />
-              <AvatarFallback>U</AvatarFallback>
+              <AvatarFallback>
+                {profile?.full_name ? profile.full_name.substring(0, 2).toUpperCase() : user?.email?.[0]?.toUpperCase() || 'U'}
+              </AvatarFallback>
             </Avatar>
             <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-              <span className="text-sm font-medium">Current User</span>
+              <span className="text-sm font-medium">{profile?.full_name || 'Current User'}</span>
               <span className="text-xs text-muted-foreground">
-                user@example.com
+                {user?.email}
               </span>
             </div>
           </div>
@@ -174,23 +198,7 @@ export default function TicketsPage() {
               <TicketIcon className="mb-2 size-10" />
               <h3 className="text-lg font-semibold">Error Loading Tickets</h3>
               <p className="text-sm">{error}</p>
-              <Button variant="outline" size="sm" className="mt-4" onClick={() => {
-                setLoading(true);
-                setError(null);
-                // Re-fetch tickets
-                 async function fetchTickets() {
-                  try {
-                    const fetchedTickets = await getTickets();
-                    setTickets(fetchedTickets);
-                  } catch (e) {
-                    console.error('Failed to refetch tickets:', e);
-                    setError('Failed to load tickets. Please try again later.');
-                  } finally {
-                    setLoading(false);
-                  }
-                }
-                fetchTickets();
-              }}>
+              <Button variant="outline" size="sm" className="mt-4" onClick={fetchUserTickets}>
                 Retry
               </Button>
             </div>
@@ -237,7 +245,7 @@ export default function TicketsPage() {
                         <TableCell className="hidden md:table-cell">{ticket.phoneNumber || '-'}</TableCell>
                         <TableCell className="hidden lg:table-cell">{ticket.employeeId || '-'}</TableCell>
                         <TableCell>
-                          {ticket.created_at ? format(new Date(ticket.created_at), 'PPpp') : 'N/A'}
+                          {ticket.created_at ? format(new Date(ticket.created_at), 'PP') : 'N/A'}
                         </TableCell>
                         <TableCell className="text-right">
                           <Button variant="outline" size="sm" asChild>

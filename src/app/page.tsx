@@ -1,4 +1,6 @@
 
+'use client';
+
 import {
   SidebarProvider,
   Sidebar,
@@ -11,8 +13,8 @@ import {
   SidebarInset,
   SidebarFooter,
 } from '@/components/ui/sidebar';
-import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar';
-import {Button} from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import {
   FileText,
   LifeBuoy,
@@ -25,8 +27,33 @@ import {
 import Link from 'next/link';
 import Balancer from 'react-wrap-balancer';
 import Image from 'next/image';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function Home() {
+  const { user, profile, role, loading, signOut: doSignOut } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+
+  const handleLogout = async () => {
+    await doSignOut();
+    router.push('/login');
+  };
+
+  if (loading || !user) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
   return (
     <SidebarProvider>
       <Sidebar>
@@ -43,41 +70,35 @@ export default function Home() {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild isActive>
-                <Link href="/" legacyBehavior passHref>
-                  <a>
-                    <LayoutDashboard />
-                    <span>Dashboard</span>
-                  </a>
+                <Link href="/">
+                  <LayoutDashboard />
+                  <span>Dashboard</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Link href="/tickets" legacyBehavior passHref>
-                  <a>
-                    <Ticket />
-                    <span>Tickets</span>
-                  </a>
+                <Link href="/tickets">
+                  <Ticket />
+                  <span>Tickets</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link href="/users" legacyBehavior passHref>
-                  <a>
+            {role === 'admin' && (
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/users">
                     <Users />
                     <span>Users</span>
-                  </a>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Link href="/submit-ticket" legacyBehavior passHref>
-                  <a>
-                    <FileText />
-                    <span>Submit Ticket</span>
-                  </a>
+                <Link href="/submit-ticket">
+                  <FileText />
+                  <span>Submit Ticket</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -87,38 +108,38 @@ export default function Home() {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Link href="/settings" legacyBehavior passHref>
-                  <a>
-                    <Settings />
-                    <span>Settings</span>
-                  </a>
+                <Link href="/settings">
+                  <Settings />
+                  <span>Settings</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link href="/login" legacyBehavior passHref>
-                  <a>
-                    <LogOut />
-                    <span>Logout</span>
-                  </a>
-                </Link>
+              <SidebarMenuButton onClick={handleLogout}>
+                <LogOut />
+                <span>Logout</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
           <div className="mt-4 flex items-center gap-3 rounded-lg bg-secondary p-3 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-2">
             <Avatar className="size-8">
               <AvatarImage
-                src="https://picsum.photos/40/40"
-                alt="User Avatar"
+                src={profile?.full_name ? undefined : "https://picsum.photos/40/40"} // Placeholder if no specific avatar URL
+                alt={profile?.full_name || user?.email?.[0]?.toUpperCase() || 'U'}
                 data-ai-hint="user avatar"
               />
-              <AvatarFallback>U</AvatarFallback>
+              <AvatarFallback>
+                {profile?.full_name
+                  ? profile.full_name.substring(0, 2).toUpperCase()
+                  : user?.email?.[0]?.toUpperCase() || 'U'}
+              </AvatarFallback>
             </Avatar>
             <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-              <span className="text-sm font-medium">Current User</span>
+              <span className="text-sm font-medium">
+                {profile?.full_name || 'Current User'}
+              </span>
               <span className="text-xs text-muted-foreground">
-                user@example.com
+                {user?.email}
               </span>
             </div>
           </div>
@@ -130,7 +151,6 @@ export default function Home() {
             <SidebarTrigger className="md:hidden" />
             <h2 className="text-xl font-semibold">Dashboard</h2>
           </div>
-          {/* Add User Menu or other header elements here if needed */}
         </header>
         <main className="flex-1 overflow-auto p-4 lg:p-6">
           <div className="flex flex-col items-center justify-center space-y-6 text-center">
@@ -143,19 +163,19 @@ export default function Home() {
               className="rounded-lg shadow-md"
             />
             <h3 className="text-2xl font-semibold">
-              Welcome to HelpDesk Lite!
+              Welcome to HelpDesk Lite, {profile?.full_name || user?.email}!
             </h3>
             <Balancer className="max-w-lg text-muted-foreground">
               This is your central hub for managing support. You can view all
-              support tickets, manage users, or submit a new ticket using the
+              support tickets, manage users (if you're an admin), or submit a new ticket using the
               sidebar navigation.
             </Balancer>
             <div className="flex gap-4">
               <Button asChild>
-                <Link href="/tickets" legacyBehavior passHref><a>View All Tickets</a></Link>
+                <Link href="/tickets">View All Tickets</Link>
               </Button>
               <Button asChild variant="secondary">
-                <Link href="/submit-ticket" legacyBehavior passHref><a>Create New Ticket</a></Link>
+                <Link href="/submit-ticket">Create New Ticket</Link>
               </Button>
             </div>
           </div>
